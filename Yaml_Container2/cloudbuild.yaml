@@ -1,0 +1,45 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Build Docker Image"
+    args:
+      [
+        "build",
+        "-t",
+        "us-central1-docker.pkg.dev/fleet-garage-389620/a8s-assignment/container2",
+        ".",
+      ]
+
+  - name: "gcr.io/cloud-builders/docker"
+    id: "Push Docker Image"
+    args:
+      [
+        "push",
+        "us-central1-docker.pkg.dev/fleet-garage-389620/a8s-assignment/container2",
+      ]
+    waitFor:
+      - "Build Docker Image"
+
+  - name: "gcr.io/cloud-builders/kubectl"
+    id: "Create Persistent Volume"
+    args:
+      - "apply"
+      - "-f"
+      - "persistent-volume.yaml"
+    env:
+      - "CLOUDSDK_COMPUTE_REGION=us-central1-a"
+      - "CLOUDSDK_CONTAINER_CLUSTER=cost-optimized-cluster-1"
+    waitFor:
+      - "Push Docker Image"
+
+  - name: "gcr.io/cloud-builders/gke-deploy"
+    id: "Deploy to GKE"
+    args:
+      [
+        "run",
+        "--filename=deploy.yaml",
+        "--image=us-central1-docker.pkg.dev/fleet-garage-389620/a8s-assignment/container2",
+        "--cluster=cost-optimized-cluster-1",
+        "--location=us-central1-a",
+      ]
+    waitFor:
+      - "Create Persistent Volume"

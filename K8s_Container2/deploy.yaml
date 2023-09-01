@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: container2
+  labels:
+    type: backend
+    app: container2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      type: backend
+      app: container2
+  template:
+    metadata:
+      name: container2pod
+      labels:
+        type: backend
+        app: container2
+    spec:
+      containers:
+        - name: container2container
+          image: us-central1-docker.pkg.dev/fleet-garage-389620/a8s-assignment/container2
+          ports:
+            - containerPort: 3000
+          volumeMounts:
+            - name: data-volume
+              mountPath: "/margin_PV_dir"
+      volumes:
+        - name: data-volume
+          persistentVolumeClaim:
+            claimName: margin-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: container2-service
+spec:
+  type: LoadBalancer
+  selector:
+    type: backend
+    app: container2
+  ports:
+    - port: 80
+      targetPort: 3000
